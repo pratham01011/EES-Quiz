@@ -461,6 +461,8 @@ const ALL_QUESTIONS = [{"q":"Identify the method of air purification from the gi
 let quiz = [], current = 0, score = 0, wrong = 0, skipped = 0;
 let timerSec = 0, timerInterval = null, answered = false;
 let results = [];
+// Stores the shuffled options for the current question: [{key, text, isCorrect}, ...]
+let currentShuffledOptions = [];
 
 function shuffle(arr) {
   const a = [...arr];
@@ -469,6 +471,17 @@ function shuffle(arr) {
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
+}
+
+// Builds a shuffled option list for a question, preserving which one is correct
+function buildShuffledOptions(q) {
+  const correctKey = q.ans.toLowerCase();
+  const opts = ['a','b','c','d'].map(k => ({
+    key: k,
+    text: q[k].replace(/^[A-Da-d][).]\s*/,'').trim(),
+    isCorrect: k === correctKey
+  }));
+  return shuffle(opts);
 }
 
 function startQuiz() {
@@ -495,19 +508,21 @@ function renderQuestion() {
   document.getElementById('score-live').textContent = `Score: ${score}`;
   document.getElementById('progress-fill').style.width = pct + '%';
 
-  // Clean option text (strip leading A) B) etc if present)
-  const cleanOpt = t => t.replace(/^[A-Da-d][).]\s*/,'').trim();
-
   document.getElementById('question-text').textContent = q.q;
+
+  // Shuffle the options for this question
+  currentShuffledOptions = buildShuffledOptions(q);
+  const labels = ['A','B','C','D'];
 
   const grid = document.getElementById('options-grid');
   grid.innerHTML = '';
-  ['a','b','c','d'].forEach(k => {
+  currentShuffledOptions.forEach((opt, idx) => {
     const btn = document.createElement('button');
     btn.className = 'option-btn';
-    btn.onclick = () => selectAnswer(k, btn);
-    btn.innerHTML = `<span class="opt-label">${k.toUpperCase()}</span>${cleanOpt(q[k])}`;
-    btn.dataset.key = k;
+    btn.onclick = () => selectAnswer(opt, btn);
+    btn.innerHTML = `<span class="opt-label">${labels[idx]}</span>${opt.text}`;
+    btn.dataset.origKey = opt.key;
+    btn.dataset.isCorrect = opt.isCorrect ? '1' : '0';
     grid.appendChild(btn);
   });
 
@@ -540,38 +555,39 @@ function updateTimerUI(el, sec) {
   el.className = sec <= 7 ? 'timer-badge warning' : 'timer-badge';
 }
 
-function selectAnswer(chosen, btn) {
+function selectAnswer(opt, btn) {
   if (answered) return;
   answered = true;
   clearInterval(timerInterval);
 
   const q = quiz[current];
-  const correct = q.ans.toLowerCase();
-  const cleanOpt = t => t.replace(/^[A-Da-d][).]\s*/,'').trim();
+  const correctOpt = currentShuffledOptions.find(o => o.isCorrect);
 
   document.getElementById('skip-btn').style.display = 'none';
   document.getElementById('next-btn').style.display = 'block';
   document.getElementById('timer-display').className = 'timer-badge';
 
+  // Style all buttons
   document.querySelectorAll('.option-btn').forEach(b => {
     b.disabled = true;
-    const k = b.dataset.key;
-    if (k === correct) b.classList.add(chosen === correct ? 'correct' : 'reveal');
+    if (b.dataset.isCorrect === '1') {
+      b.classList.add(opt.isCorrect ? 'correct' : 'reveal');
+    }
   });
 
   const expEl = document.getElementById('explanation');
-  if (chosen === correct) {
+  if (opt.isCorrect) {
     score++;
     btn.classList.add('correct');
     expEl.className = 'explanation correct-msg';
-    expEl.textContent = `✅ Correct! The answer is ${correct.toUpperCase()}) ${cleanOpt(q[correct])}.`;
-    results.push({ q: q.q, status: 'correct', correct: correct.toUpperCase(), your: chosen.toUpperCase(), opts: q });
+    expEl.textContent = `✅ Correct! The answer is: ${correctOpt.text}.`;
+    results.push({ q: q.q, status: 'correct', correctText: correctOpt.text, yourText: opt.text });
   } else {
     wrong++;
     btn.classList.add('wrong');
     expEl.className = 'explanation wrong-msg';
-    expEl.textContent = `❌ Incorrect. The right answer is ${correct.toUpperCase()}) ${cleanOpt(q[correct])}.`;
-    results.push({ q: q.q, status: 'wrong', correct: correct.toUpperCase(), your: chosen.toUpperCase(), opts: q });
+    expEl.textContent = `❌ Incorrect. The right answer is: ${correctOpt.text}.`;
+    results.push({ q: q.q, status: 'wrong', correctText: correctOpt.text, yourText: opt.text });
   }
   expEl.style.display = 'block';
   document.getElementById('score-live').textContent = `Score: ${score}`;
@@ -588,19 +604,19 @@ function autoSkip() {
   skipped++;
 
   const q = quiz[current];
-  const correct = q.ans.toLowerCase();
+  const correctOpt = currentShuffledOptions.find(o => o.isCorrect);
 
   document.querySelectorAll('.option-btn').forEach(b => {
     b.disabled = true;
-    if (b.dataset.key === correct) b.classList.add('reveal');
+    if (b.dataset.isCorrect === '1') b.classList.add('reveal');
   });
 
-  document.getElementById('skip-ans-label').textContent = correct.toUpperCase() + ') ' + q[correct].replace(/^[A-Da-d][).]\s*/,'');
+  document.getElementById('skip-ans-label').textContent = correctOpt.text;
   document.getElementById('skip-msg').style.display = 'block';
   document.getElementById('skip-btn').style.display = 'none';
   document.getElementById('next-btn').style.display = 'block';
   document.getElementById('timer-display').className = 'timer-badge';
-  results.push({ q: q.q, status: 'skipped', correct: correct.toUpperCase(), your: null, opts: q });
+  results.push({ q: q.q, status: 'skipped', correctText: correctOpt.text, yourText: null });
 }
 
 function nextQuestion() {
@@ -644,21 +660,19 @@ function toggleReview() {
 }
 
 function buildReview() {
-  const cleanOpt = t => t.replace(/^[A-Da-d][).]\s*/,'').trim();
   const list = document.getElementById('review-list');
   list.innerHTML = '';
   results.forEach((r, i) => {
     const div = document.createElement('div');
     div.className = 'review-item ' + (r.status === 'wrong' ? 'wrong-review' : r.status === 'skipped' ? 'skipped-review' : '');
-    const correctText = cleanOpt(r.opts[r.correct.toLowerCase()]);
     let body = `<div class="ri-q">Q${i+1}. ${r.q}</div>`;
     if (r.status === 'correct') {
-      body += `<div class="ri-ans">✅ Your answer: ${r.correct}) ${correctText}</div>`;
+      body += `<div class="ri-ans">✅ Your answer: ${r.yourText}</div>`;
     } else if (r.status === 'wrong') {
-      body += `<div class="ri-your">❌ Your answer: ${r.your}) ${cleanOpt(r.opts[r.your.toLowerCase()])}</div>`;
-      body += `<div class="ri-ans">✅ Correct: ${r.correct}) ${correctText}</div>`;
+      body += `<div class="ri-your">❌ Your answer: ${r.yourText}</div>`;
+      body += `<div class="ri-ans">✅ Correct: ${r.correctText}</div>`;
     } else {
-      body += `<div class="ri-skip">⏩ Skipped — Correct: ${r.correct}) ${correctText}</div>`;
+      body += `<div class="ri-skip">⏩ Skipped — Correct: ${r.correctText}</div>`;
     }
     div.innerHTML = body;
     list.appendChild(div);
