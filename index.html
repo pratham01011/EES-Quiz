@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EES Mock Quiz – Environmental Education & Sustainability</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: linear-gradient(135deg, #0f4c2a 0%, #1a7a45 50%, #0d3d22 100%);
+    min-height: 100vh;
+    padding: 16px;
+    color: #222;
+  }
+
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  /* ── Header ── */
+  .header {
+    text-align: center;
+    color: #fff;
+    padding: 24px 16px 20px;
+  }
+  .header .badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.35);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    color: #a8f0c6;
+  }
+  .header h1 { font-size: clamp(20px, 5vw, 28px); font-weight: 700; line-height: 1.2; }
+  .header p  { font-size: 14px; color: #b8e8cb; margin-top: 6px; }
+
+  /* ── Start Screen ── */
+  #start-screen {
+    background: #fff;
+    border-radius: 20px;
+    padding: 32px 24px;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+    margin-top: 8px;
+  }
+  #start-screen h2 { font-size: 22px; color: #0f4c2a; margin-bottom: 8px; }
+  #start-screen p  { color: #555; font-size: 14px; line-height: 1.6; margin-bottom: 20px; }
+
+  .settings-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 24px;
+  }
+  .settings-row label { font-size: 13px; font-weight: 600; color: #333; display: block; margin-bottom: 4px; text-align: left; }
+  .settings-row select {
+    padding: 10px 14px;
+    border: 2px solid #d4edda;
+    border-radius: 10px;
+    font-size: 14px;
+    color: #222;
+    background: #f6fff9;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%230f4c2a' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+  }
+
+  .start-btn {
+    background: linear-gradient(135deg, #1a7a45, #0f4c2a);
+    color: #fff;
+    border: none;
+    border-radius: 14px;
+    padding: 16px 40px;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+    width: 100%;
+    max-width: 300px;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 16px rgba(15,76,42,0.35);
+    letter-spacing: 0.5px;
+  }
+  .start-btn:hover  { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(15,76,42,0.45); }
+  .start-btn:active { transform: translateY(0); }
+
+  /* ── Quiz Screen ── */
+  #quiz-screen { display: none; }
+
+  .progress-bar-wrap {
+    background: rgba(255,255,255,0.2);
+    border-radius: 20px;
+    height: 8px;
+    margin: 12px 0 16px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    background: #a8f0c6;
+    height: 100%;
+    border-radius: 20px;
+    transition: width 0.4s ease;
+  }
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    color: #b8e8cb;
+    font-size: 13px;
+    margin-bottom: 4px;
+  }
+
+  .card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 24px 20px;
+    box-shadow: 0 6px 28px rgba(0,0,0,0.22);
+    animation: slideIn 0.3s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .q-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .q-num {
+    background: #e8f5ec;
+    color: #0f4c2a;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+  }
+  .timer-badge {
+    background: #fff4e0;
+    color: #b35a00;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1.5px solid #ffd580;
+  }
+  .timer-badge.warning { background: #ffe0e0; color: #c0392b; border-color: #f5a5a5; animation: pulse 0.7s infinite alternate; }
+  @keyframes pulse { from { opacity: 1; } to { opacity: 0.6; } }
+
+  .question-text {
+    font-size: clamp(15px, 4vw, 17px);
+    font-weight: 600;
+    color: #1a2e1e;
+    line-height: 1.55;
+    margin-bottom: 20px;
+  }
+
+  .options-grid { display: flex; flex-direction: column; gap: 10px; }
+
+  .option-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #f7fdf9;
+    border: 2px solid #d4edda;
+    border-radius: 12px;
+    padding: 13px 14px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #222;
+    text-align: left;
+    transition: all 0.18s;
+    width: 100%;
+    line-height: 1.4;
+  }
+  .option-btn:hover:not(:disabled) { border-color: #1a7a45; background: #edfaf3; transform: translateX(3px); }
+  .option-btn:disabled { cursor: default; }
+  .option-btn .opt-label {
+    background: #d4edda;
+    color: #0f4c2a;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 12px;
+    padding: 3px 8px;
+    min-width: 26px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .option-btn.correct { background: #d4edda; border-color: #27ae60; }
+  .option-btn.correct .opt-label { background: #27ae60; color: #fff; }
+  .option-btn.wrong   { background: #fdecea; border-color: #e74c3c; }
+  .option-btn.wrong   .opt-label { background: #e74c3c; color: #fff; }
+  .option-btn.reveal  { background: #d4edda; border-color: #27ae60; opacity: 0.75; }
+
+  /* ── Explanation box ── */
+  .explanation {
+    margin-top: 16px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    font-size: 13.5px;
+    line-height: 1.55;
+    display: none;
+  }
+  .explanation.correct-msg { background: #eafaf1; border-left: 4px solid #27ae60; color: #1a4a2a; }
+  .explanation.wrong-msg   { background: #fef9e7; border-left: 4px solid #f39c12; color: #5d4037; }
+
+  /* ── Skipped badge ── */
+  .skip-msg {
+    margin-top: 14px;
+    padding: 10px 14px;
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    border-radius: 10px;
+    font-size: 13px;
+    color: #7a5900;
+    display: none;
+  }
+
+  .next-btn {
+    margin-top: 18px;
+    background: linear-gradient(135deg, #1a7a45, #0f4c2a);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 14px 28px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    width: 100%;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 14px rgba(15,76,42,0.3);
+    display: none;
+  }
+  .next-btn:hover  { transform: translateY(-1px); }
+  .next-btn:active { transform: translateY(0); }
+
+  .skip-btn {
+    margin-top: 10px;
+    background: transparent;
+    color: #888;
+    border: 1.5px solid #ddd;
+    border-radius: 12px;
+    padding: 11px 28px;
+    font-size: 14px;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.15s;
+  }
+  .skip-btn:hover { border-color: #aaa; color: #555; }
+
+  /* ── Score Screen ── */
+  #score-screen { display: none; }
+
+  .score-card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 32px 24px;
+    text-align: center;
+    box-shadow: 0 6px 28px rgba(0,0,0,0.22);
+    margin-top: 8px;
+  }
+  .score-emoji { font-size: 60px; margin-bottom: 10px; }
+  .score-title { font-size: 22px; font-weight: 700; color: #0f4c2a; margin-bottom: 6px; }
+  .score-sub   { font-size: 14px; color: #555; margin-bottom: 24px; }
+  .score-ring-wrap { display: flex; justify-content: center; margin-bottom: 24px; }
+  .score-ring {
+    width: 140px; height: 140px;
+    border-radius: 50%;
+    background: conic-gradient(#27ae60 var(--pct), #e8f5ec 0);
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+  .score-ring::before {
+    content: '';
+    width: 100px; height: 100px;
+    background: #fff;
+    border-radius: 50%;
+    position: absolute;
+  }
+  .score-num { font-size: 28px; font-weight: 800; color: #0f4c2a; position: relative; z-index: 1; }
+
+  .stats-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 24px; }
+  .stat-box {
+    flex: 1; min-width: 80px; max-width: 120px;
+    border-radius: 14px; padding: 14px 10px; text-align: center;
+  }
+  .stat-box .sval { font-size: 24px; font-weight: 800; }
+  .stat-box .slbl { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; margin-top: 3px; }
+  .stat-box.green { background: #eafaf1; }
+  .stat-box.green .sval { color: #27ae60; }
+  .stat-box.green .slbl { color: #1a6b38; }
+  .stat-box.red   { background: #fdecea; }
+  .stat-box.red .sval   { color: #e74c3c; }
+  .stat-box.red .slbl   { color: #c0392b; }
+  .stat-box.yellow{ background: #fef9e7; }
+  .stat-box.yellow .sval{ color: #f39c12; }
+  .stat-box.yellow .slbl{ color: #9a6e00; }
+  .stat-box.blue  { background: #eaf0fb; }
+  .stat-box.blue .sval  { color: #2980b9; }
+  .stat-box.blue .slbl  { color: #1a5f8a; }
+
+  .review-section { text-align: left; margin-top: 16px; }
+  .review-section h3 { font-size: 16px; font-weight: 700; color: #0f4c2a; margin-bottom: 12px; text-align: center; }
+  .review-item {
+    background: #f7fdf9;
+    border: 1.5px solid #d4edda;
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 10px;
+    font-size: 13px;
+  }
+  .review-item.wrong-review { background: #fef6f6; border-color: #f5c5c5; }
+  .review-item.skipped-review { background: #fffbf0; border-color: #ffe0a0; }
+  .review-item .ri-q   { font-weight: 600; color: #1a2e1e; margin-bottom: 6px; }
+  .review-item .ri-ans { color: #27ae60; }
+  .review-item .ri-your { color: #e74c3c; }
+  .review-item .ri-skip { color: #b35a00; }
+
+  .action-btns { display: flex; gap: 10px; margin-top: 24px; flex-wrap: wrap; }
+  .action-btns button {
+    flex: 1; min-width: 130px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: none;
+  }
+  .btn-primary { background: linear-gradient(135deg, #1a7a45, #0f4c2a); color: #fff; box-shadow: 0 4px 14px rgba(15,76,42,0.3); }
+  .btn-primary:hover { transform: translateY(-1px); }
+  .btn-outline { background: #fff; color: #0f4c2a; border: 2px solid #1a7a45 !important; }
+  .btn-outline:hover { background: #edfaf3; }
+
+  hr.divider { border: none; border-top: 1px solid #e8f5ec; margin: 20px 0; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="badge">🌿 EES Mock Test</div>
+    <h1>Environmental Education & Sustainability</h1>
+    <p>Test your knowledge — interactive mock quiz</p>
+  </div>
+
+  <!-- START SCREEN -->
+  <div id="start-screen">
+    <h2>Ready to begin? 🎯</h2>
+    <p>96 questions from your question bank, shuffled randomly. Pick how many you want and set a timer.</p>
+    <div class="settings-row">
+      <div>
+        <label>📋 Number of Questions</label>
+        <select id="num-qs">
+          <option value="10">10 Questions</option>
+          <option value="20">20 Questions</option>
+          <option value="30" selected>30 Questions</option>
+          <option value="50">50 Questions</option>
+          <option value="96">All 96 Questions</option>
+        </select>
+      </div>
+      <div>
+        <label>⏱️ Time per Question</label>
+        <select id="timer-opt">
+          <option value="0">No Timer</option>
+          <option value="20">20 seconds</option>
+          <option value="30" selected>30 seconds</option>
+          <option value="45">45 seconds</option>
+          <option value="60">60 seconds</option>
+        </select>
+      </div>
+    </div>
+    <button class="start-btn" onclick="startQuiz()">Start Quiz 🚀</button>
+  </div>
+
+  <!-- QUIZ SCREEN -->
+  <div id="quiz-screen">
+    <div class="progress-label">
+      <span id="progress-text">Question 1 of 30</span>
+      <span id="score-live">Score: 0</span>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+
+    <div class="card">
+      <div class="q-meta">
+        <span class="q-num" id="q-num-label">Q1</span>
+        <span class="timer-badge" id="timer-display" style="display:none">⏱ 30s</span>
+      </div>
+      <div class="question-text" id="question-text"></div>
+      <div class="options-grid" id="options-grid"></div>
+      <div class="explanation" id="explanation"></div>
+      <div class="skip-msg" id="skip-msg">⏩ Skipped — The correct answer was <strong id="skip-ans-label"></strong>.</div>
+      <button class="next-btn" id="next-btn" onclick="nextQuestion()">Next Question →</button>
+      <button class="skip-btn" id="skip-btn" onclick="skipQuestion()">Skip this question</button>
+    </div>
+  </div>
+
+  <!-- SCORE SCREEN -->
+  <div id="score-screen">
+    <div class="score-card">
+      <div class="score-emoji" id="result-emoji">🌿</div>
+      <div class="score-title" id="result-title">Well done!</div>
+      <div class="score-sub" id="result-sub"></div>
+
+      <div class="score-ring-wrap">
+        <div class="score-ring" id="score-ring">
+          <div class="score-num" id="score-pct-txt">0%</div>
+        </div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-box green">
+          <div class="sval" id="stat-correct">0</div>
+          <div class="slbl">✅ Correct</div>
+        </div>
+        <div class="stat-box red">
+          <div class="sval" id="stat-wrong">0</div>
+          <div class="slbl">❌ Wrong</div>
+        </div>
+        <div class="stat-box yellow">
+          <div class="sval" id="stat-skipped">0</div>
+          <div class="slbl">⏩ Skipped</div>
+        </div>
+        <div class="stat-box blue">
+          <div class="sval" id="stat-total">0</div>
+          <div class="slbl">📋 Total</div>
+        </div>
+      </div>
+
+      <div class="action-btns">
+        <button class="btn-primary" onclick="restartQuiz()">🔄 New Quiz</button>
+        <button class="btn-outline" onclick="toggleReview()">📖 Review Answers</button>
+      </div>
+
+      <div class="review-section" id="review-section" style="display:none">
+        <hr class="divider">
+        <h3>Answer Review</h3>
+        <div id="review-list"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const ALL_QUESTIONS = [{"q":"Apex predators belong to:","a":"Primary level","b":"Secondary level","c":"Tertiary level","d":"Producer level","ans":"C"},{"q":"Phosphorus cycle has:","a":"Atmospheric phase","b":"No atmospheric phase","c":"Only marine phase","d":"Only air phase","ans":"B"},{"q":"Estuaries are where:","a":"Desert meets forest","b":"Freshwater meets saltwater","c":"River meets glacier","d":"Forest meets grassland","ans":"B"},{"q":"Biodiversity term coined by:","a":"Darwin","b":"Walter Rosen","c":"Mendel","d":"Odum","ans":"B"},{"q":"Genetic diversity refers to variation within:","a":"Ecosystem","b":"Species","c":"Biome","d":"Planet","ans":"B"},{"q":"Alpha diversity is diversity within:","a":"Region","b":"Habitat","c":"Country","d":"Continent","ans":"B"},{"q":"India has ____ biogeographical zones.","a":"5","b":"8","c":"10","d":"12","ans":"C"},{"q":"India is one of ____ megadiverse countries.","a":"10","b":"12","c":"17","d":"25","ans":"C"},{"q":"In‑situ conservation means:","a":"Outside habitat","b":"Within habitat","c":"In labs","d":"In zoos","ans":"B"},{"q":"Example of in‑situ method:","a":"Gene bank","b":"National park","c":"Seed bank","d":"Cryopreservation","ans":"B"},{"q":"Ex‑situ conservation occurs:","a":"In forests","b":"Outside habitat","c":"In oceans","d":"In deserts","ans":"B"},{"q":"Wildlife Protection Act year:","a":"1980","b":"1972","c":"2002","d":"1986","ans":"B"},{"q":"Slowest biogeochemical cycle:","a":"Carbon","b":"Nitrogen","c":"Phosphorus","d":"Water","ans":"C"},{"q":"Mining activities mainly cause:","a":"Soil disturbance and pollution","b":"Air cooling","c":"Water purification","d":"Forest growth","ans":"A"},{"q":"Deforestation leads to:","a":"Increase in soil fertility","b":"Soil erosion","c":"Increase in biodiversity","d":"Improved carbon storage","ans":"B"},{"q":"Loss of vegetation affects ecosystems by:","a":"Increasing biodiversity","b":"Improving soil fertility","c":"Disrupting ecosystem balance","d":"Reducing pollution","ans":"C"},{"q":"Improper industrial waste disposal introduces ______ into soil:","a":"Oxygen","b":"Heavy metals","c":"Nitrogen","d":"Helium","ans":"B"},{"q":"Pollutants leaching into groundwater result in:","a":"Air pollution","b":"Thermal pollution","c":"Light pollution","d":"Water pollution","ans":"D"},{"q":"Exposure to contaminated soil may cause:","a":"Improved immunity","b":"Respiratory and skin diseases","c":"Better crop yield","d":"Reduced toxins","ans":"B"},{"q":"Soil pollution reduces:","a":"Crop yield","b":"Industrial output","c":"Noise levels","d":"Light intensity","ans":"A"},{"q":"Economic losses due to soil degradation mainly affect:","a":"Agriculture and forestry","b":"Space research","c":"Telecommunications","d":"Sports industry","ans":"A"},{"q":"Sustainable agriculture includes:","a":"Excess fertilizer use","b":"Organic farming practices","c":"Mining activities","d":"Deforestation","ans":"B"},{"q":"Reforestation helps in:","a":"Increasing soil erosion","b":"Industrialization","c":"Urbanization","d":"Preventing soil erosion","ans":"D"},{"q":"Mulching helps to conserve:","a":"Noise","b":"Heat only","c":"Moisture in soil","d":"Industrial waste","ans":"C"},{"q":"No-till farming mainly helps to:","a":"Disturb soil structure","b":"Maintain soil health","c":"Increase erosion","d":"Increase pesticide use","ans":"B"},{"q":"When the source of pollution is easily identifiable, it is called:","a":"Non-point source","b":"Diffuse source","c":"Point source","d":"Mobile source","ans":"C"},{"q":"Agricultural runoff mainly contains:","a":"Heavy machinery","b":"Pesticides and fertilizers","c":"Pure water","d":"Sand particles only","ans":"B"},{"q":"Eutrophication is caused by excess of:","a":"Oxygen","b":"Nitrates and phosphates","c":"Carbon dioxide","d":"Chlorine","ans":"B"},{"q":"Permissible nitrate limit in drinking water is about:","a":"10 mg/L","b":"25 mg/L","c":"45 mg/L","d":"100 mg/L","ans":"C"},{"q":"Optimum Dissolved Oxygen (DO) for healthy aquatic life is:","a":"1–2 mg/L","b":"2–3 mg/L","c":"4–6 mg/L","d":"8–10 mg/L","ans":"C"},{"q":"Chemical Oxygen Demand (COD) measures:","a":"Amount of nitrogen","b":"Oxygen required to chemically oxidize waste","c":"pH of water","d":"Temperature of water","ans":"B"},{"q":"COD is expressed in:","a":"ppm","b":"pH units","c":"NTU","d":"mg/L","ans":"D"},{"q":"Screening in water treatment removes:","a":"Dissolved salts","b":"Floating objects","c":"Bacteria","d":"Odor","ans":"B"},{"q":"Coagulation involves adding:","a":"Chlorine","b":"Sugar","c":"Salt","d":"Aluminum sulfate","ans":"D"},{"q":"Flocculation helps to:","a":"Break flocs","b":"Aggregate particles","c":"Increase turbidity","d":"Add pathogens","ans":"B"},{"q":"Permissible pH range of drinking water (BIS) is:","a":"5.5–6.5","b":"6.5–8.5","c":"7–9.5","d":"4–6","ans":"B"},{"q":"Maximum permissible TDS in drinking water is:","a":"100 mg/L","b":"250 mg/L","c":"500 mg/L","d":"1000 mg/L","ans":"C"},{"q":"Rainwater harvesting helps in:","a":"Soil pollution","b":"Groundwater recharge","c":"Air pollution","d":"Noise pollution","ans":"B"},{"q":"Forest ecosystem covers about earth land:","a":"10%","b":"20%","c":"30%","d":"50%","ans":"C"},{"q":"Grasslands cover about:","a":"9%","b":"19%","c":"39%","d":"59%","ans":"B"},{"q":"Desert rainfall is less than:","a":"100 cm","b":"75 cm","c":"50 cm","d":"25 cm","ans":"D"},{"q":"Tundra is the ____ biome.","a":"Hottest","b":"Coldest","c":"Wettest","d":"Driest","ans":"B"},{"q":"Aquatic ecosystems cover about:","a":"30%","b":"50%","c":"70%","d":"90%","ans":"C"},{"q":"Government initiative PMKSY promotes:","a":"Oil drilling","b":"Plastic production","c":"Mining","d":"Efficient irrigation","ans":"D"},{"q":"Peroxy Acetyl Nitrate (PAN) causes:","a":"Soil erosion","b":"Eye and respiratory irritation","c":"Water logging","d":"Noise pollution","ans":"B"},{"q":"Particulate matter can penetrate deep into the:","a":"Skin","b":"Bones","c":"Lungs","d":"Stomach","ans":"C"},{"q":"Fly ash is mainly produced from:","a":"Nuclear plants","b":"Thermal power stations","c":"Solar plants","d":"Wind turbines","ans":"B"},{"q":"CPCB stands for:","a":"Central Pollution Control Board","b":"Central Public Control Board","c":"Civil Pollution Board","d":"Control Pollution Bureau","ans":"A"},{"q":"Noise above ______ dB is hazardous:","a":"50","b":"60","c":"70","d":"80","ans":"D"},{"q":"Industrial area daytime noise limit:","a":"75 dB","b":"65 dB","c":"55 dB","d":"50 dB","ans":"A"},{"q":"Residential area nighttime limit:","a":"55 dB","b":"50 dB","c":"45 dB","d":"40 dB","ans":"C"},{"q":"Silence zone daytime limit:","a":"50 dB","b":"45 dB","c":"40 dB","d":"55 dB","ans":"A"},{"q":"Transportation noise includes:","a":"Aircraft","b":"Soil erosion","c":"Water flow","d":"Photosynthesis","ans":"A"},{"q":"Continuous exposure to noise causes:","a":"Hearing loss","b":"Better memory","c":"Improved sleep","d":"Faster growth","ans":"A"},{"q":"Noise affects wildlife by disturbing:","a":"Photosynthesis","b":"Communication","c":"Soil fertility","d":"Water cycle","ans":"B"},{"q":"Green belts help in:","a":"Increasing noise","b":"Acting as noise buffers","c":"Producing smoke","d":"Increasing CO2","ans":"B"},{"q":"Meteorology studies:","a":"Soil","b":"Atmospheric variations","c":"Water bodies","d":"Rocks","ans":"B"},{"q":"SPCB stands for:","a":"State Pollution Control Board","b":"Special Pollution Board","c":"State Public Board","d":"Standard Pollution Bureau","ans":"A"},{"q":"CPCB was established under which Act in 1974?","a":"Air Act","b":"Noise Act","c":"Water Act","d":"Forest Act","ans":"C"},{"q":"Noise is measured in:","a":"Pascal","b":"Joule","c":"Decibel","d":"Watt","ans":"C"},{"q":"Silence zones include areas around:","a":"Markets","b":"Hospitals","c":"Factories","d":"Highways","ans":"B"},{"q":"SPCB is responsible for:","a":"National defense","b":"Pollution control at state level","c":"Space research","d":"Banking","ans":"B"},{"q":"Article 48-A of the Indian Constitution deals with:","a":"Fundamental Rights","b":"Protection and improvement of environment","c":"Right to Education","d":"Panchayati Raj","ans":"B"},{"q":"Article 48-A was added by which amendment?","a":"44th Amendment","b":"73rd Amendment","c":"42nd Amendment","d":"86th Amendment","ans":"C"},{"q":"Article 51-A(g) is related to:","a":"State Policy","b":"Citizen's Fundamental Duty","c":"Election Commission","d":"Finance Commission","ans":"B"},{"q":"The Environment (Protection) Act was enacted in:","a":"1972","b":"1986","c":"1992","d":"2002","ans":"B"},{"q":"The Water Act was passed in:","a":"1974","b":"1981","c":"1986","d":"1991","ans":"A"},{"q":"The Air Act was enacted in:","a":"1972","b":"1974","c":"1981","d":"1986","ans":"C"},{"q":"Wildlife Protection Act was enacted in:","a":"1970","b":"1972","c":"1980","d":"1986","ans":"B"},{"q":"Forest (Conservation) Act was passed in:","a":"1972","b":"1976","c":"1980","d":"2002","ans":"C"},{"q":"National Green Tribunal Act was passed in:","a":"2005","b":"2010","c":"2012","d":"2015","ans":"B"},{"q":"Biological Diversity Act was enacted in:","a":"1998","b":"2000","c":"2002","d":"2005","ans":"C"},{"q":"Solar desalination uses energy from:","a":"Coal","b":"Wind","c":"Sun","d":"Diesel","ans":"C"},{"q":"Direct solar desalination uses:","a":"Reverse Osmosis","b":"Evaporation and condensation","c":"Filtration only","d":"Chlorination","ans":"B"},{"q":"Green architecture mainly focuses on:","a":"Luxury design","b":"Minimizing environmental impact","c":"Tall buildings","d":"Concrete usage","ans":"B"},{"q":"Rainwater harvesting helps in:","a":"Water wastage","b":"Water conservation","c":"Air pollution","d":"Noise reduction","ans":"B"},{"q":"Vertical farming grows crops:","a":"Underground","b":"Horizontally","c":"In stacked layers","d":"In deserts only","ans":"C"},{"q":"Hydroponics is cultivation without:","a":"Water","b":"Soil","c":"Light","d":"Nutrients","ans":"B"},{"q":"NFT in hydroponics stands for:","a":"Nutrient Flow Tank","b":"Nutrient Film Technique","c":"Natural Farming Technique","d":"New Farming Technology","ans":"B"},{"q":"BEV stands for:","a":"Battery Electric Vehicle","b":"Bio Energy Vehicle","c":"Battery Engine Vehicle","d":"Basic Electric Van","ans":"A"},{"q":"Bagasse is obtained from:","a":"Corn","b":"Sugarcane","c":"Bamboo","d":"Cotton","ans":"B"},{"q":"PLA is made from:","a":"Coal","b":"Cornstarch","c":"Iron","d":"Plastic waste","ans":"B"},{"q":"Remote sensing mainly uses:","a":"Satellites","b":"Trucks","c":"Boats","d":"Tractors","ans":"A"},{"q":"GIS is used for:","a":"Cooking","b":"Mapping and analysis","c":"Banking","d":"Driving","ans":"B"},{"q":"ENVIS was launched in:","a":"1972","b":"1982","c":"1992","d":"2002","ans":"B"},{"q":"Environmental awareness helps in:","a":"Increasing pollution","b":"Sustainable development","c":"Deforestation","d":"Resource depletion","ans":"B"},{"q":"Which NGO focuses on global warming and deforestation?","a":"IUCN","b":"Greenpeace","c":"WWF","d":"CSE","ans":"B"},{"q":"Violation of Water Act provisions is considered:","a":"Civil offence","b":"Compoundable offence","c":"Cognizable offence","d":"Minor offence","ans":"C"},{"q":"Hazardous Waste Rules were first introduced in:","a":"1989","b":"1995","c":"2001","d":"2010","ans":"A"},{"q":"\"Genetic pollution\" may originate due to:","a":"Uncontrolled hybridization","b":"Unprofitability","c":"Natural Phenomenon","d":"None of these","ans":"A"},{"q":"CITES and WHC conventions were held in years:","a":"1976 and 1977 respectively","b":"1981 and 1982 respectively","c":"1986 and 1987 respectively","d":"1992 and 1993 respectively","ans":"A"},{"q":"Which of the following is NOT a biodiversity hotspot region?","a":"California Floristic Province","b":"Madrean pine-oak woodlands","c":"Mesoamerica","d":"Antarctica","ans":"D"},{"q":"Eutrophication causes:","a":"Decrease in organic matter","b":"Increase in inorganic nutrients","c":"Decrease in dissolved oxygen","d":"Increase in dissolved oxygen","ans":"C"}];
+
+let quiz = [], current = 0, score = 0, wrong = 0, skipped = 0;
+let timerSec = 0, timerInterval = null, answered = false;
+let results = [];
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startQuiz() {
+  const n = parseInt(document.getElementById('num-qs').value);
+  timerSec = parseInt(document.getElementById('timer-opt').value);
+  quiz = shuffle(ALL_QUESTIONS).slice(0, n);
+  current = 0; score = 0; wrong = 0; skipped = 0;
+  results = [];
+  document.getElementById('start-screen').style.display = 'none';
+  document.getElementById('quiz-screen').style.display = 'block';
+  renderQuestion();
+}
+
+function renderQuestion() {
+  answered = false;
+  clearInterval(timerInterval);
+
+  const q = quiz[current];
+  const total = quiz.length;
+  const pct = (current / total) * 100;
+
+  document.getElementById('q-num-label').textContent = `Q${current + 1}`;
+  document.getElementById('progress-text').textContent = `Question ${current + 1} of ${total}`;
+  document.getElementById('score-live').textContent = `Score: ${score}`;
+  document.getElementById('progress-fill').style.width = pct + '%';
+
+  // Clean option text (strip leading A) B) etc if present)
+  const cleanOpt = t => t.replace(/^[A-Da-d][).]\s*/,'').trim();
+
+  document.getElementById('question-text').textContent = q.q;
+
+  const grid = document.getElementById('options-grid');
+  grid.innerHTML = '';
+  ['a','b','c','d'].forEach(k => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.onclick = () => selectAnswer(k, btn);
+    btn.innerHTML = `<span class="opt-label">${k.toUpperCase()}</span>${cleanOpt(q[k])}`;
+    btn.dataset.key = k;
+    grid.appendChild(btn);
+  });
+
+  document.getElementById('explanation').style.display = 'none';
+  document.getElementById('skip-msg').style.display = 'none';
+  document.getElementById('next-btn').style.display = 'none';
+  document.getElementById('skip-btn').style.display = 'block';
+
+  // Timer
+  const timerEl = document.getElementById('timer-display');
+  if (timerSec > 0) {
+    timerEl.style.display = 'inline-block';
+    let remaining = timerSec;
+    updateTimerUI(timerEl, remaining);
+    timerInterval = setInterval(() => {
+      remaining--;
+      updateTimerUI(timerEl, remaining);
+      if (remaining <= 0) {
+        clearInterval(timerInterval);
+        if (!answered) autoSkip();
+      }
+    }, 1000);
+  } else {
+    timerEl.style.display = 'none';
+  }
+}
+
+function updateTimerUI(el, sec) {
+  el.textContent = `⏱ ${sec}s`;
+  el.className = sec <= 7 ? 'timer-badge warning' : 'timer-badge';
+}
+
+function selectAnswer(chosen, btn) {
+  if (answered) return;
+  answered = true;
+  clearInterval(timerInterval);
+
+  const q = quiz[current];
+  const correct = q.ans.toLowerCase();
+  const cleanOpt = t => t.replace(/^[A-Da-d][).]\s*/,'').trim();
+
+  document.getElementById('skip-btn').style.display = 'none';
+  document.getElementById('next-btn').style.display = 'block';
+  document.getElementById('timer-display').className = 'timer-badge';
+
+  document.querySelectorAll('.option-btn').forEach(b => {
+    b.disabled = true;
+    const k = b.dataset.key;
+    if (k === correct) b.classList.add(chosen === correct ? 'correct' : 'reveal');
+  });
+
+  const expEl = document.getElementById('explanation');
+  if (chosen === correct) {
+    score++;
+    btn.classList.add('correct');
+    expEl.className = 'explanation correct-msg';
+    expEl.textContent = `✅ Correct! The answer is ${correct.toUpperCase()}) ${cleanOpt(q[correct])}.`;
+    results.push({ q: q.q, status: 'correct', correct: correct.toUpperCase(), your: chosen.toUpperCase(), opts: q });
+  } else {
+    wrong++;
+    btn.classList.add('wrong');
+    expEl.className = 'explanation wrong-msg';
+    expEl.textContent = `❌ Incorrect. The right answer is ${correct.toUpperCase()}) ${cleanOpt(q[correct])}.`;
+    results.push({ q: q.q, status: 'wrong', correct: correct.toUpperCase(), your: chosen.toUpperCase(), opts: q });
+  }
+  expEl.style.display = 'block';
+  document.getElementById('score-live').textContent = `Score: ${score}`;
+}
+
+function skipQuestion() {
+  if (answered) return;
+  autoSkip();
+}
+
+function autoSkip() {
+  answered = true;
+  clearInterval(timerInterval);
+  skipped++;
+
+  const q = quiz[current];
+  const correct = q.ans.toLowerCase();
+
+  document.querySelectorAll('.option-btn').forEach(b => {
+    b.disabled = true;
+    if (b.dataset.key === correct) b.classList.add('reveal');
+  });
+
+  document.getElementById('skip-ans-label').textContent = correct.toUpperCase() + ') ' + q[correct].replace(/^[A-Da-d][).]\s*/,'');
+  document.getElementById('skip-msg').style.display = 'block';
+  document.getElementById('skip-btn').style.display = 'none';
+  document.getElementById('next-btn').style.display = 'block';
+  document.getElementById('timer-display').className = 'timer-badge';
+  results.push({ q: q.q, status: 'skipped', correct: correct.toUpperCase(), your: null, opts: q });
+}
+
+function nextQuestion() {
+  current++;
+  if (current >= quiz.length) showResults();
+  else renderQuestion();
+}
+
+function showResults() {
+  clearInterval(timerInterval);
+  document.getElementById('quiz-screen').style.display = 'none';
+  document.getElementById('score-screen').style.display = 'block';
+
+  const total = quiz.length;
+  const pct = Math.round((score / total) * 100);
+
+  const emojis = pct >= 80 ? '🏆' : pct >= 60 ? '🌿' : pct >= 40 ? '📚' : '💪';
+  const titles = pct >= 80 ? 'Outstanding!' : pct >= 60 ? 'Good Job!' : pct >= 40 ? 'Keep Studying!' : 'Don\'t Give Up!';
+  const subs   = pct >= 80 ? 'You\'re well prepared for the exam.' : pct >= 60 ? 'A bit more revision and you\'ll ace it.' : pct >= 40 ? 'Review the topics you missed.' : 'Practice makes perfect — try again!';
+
+  document.getElementById('result-emoji').textContent = emojis;
+  document.getElementById('result-title').textContent = titles;
+  document.getElementById('result-sub').textContent = subs;
+  document.getElementById('score-pct-txt').textContent = pct + '%';
+  document.getElementById('score-ring').style.setProperty('--pct', pct + '%');
+  document.getElementById('stat-correct').textContent = score;
+  document.getElementById('stat-wrong').textContent = wrong;
+  document.getElementById('stat-skipped').textContent = skipped;
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('review-section').style.display = 'none';
+}
+
+function toggleReview() {
+  const sec = document.getElementById('review-section');
+  if (sec.style.display === 'none') {
+    buildReview();
+    sec.style.display = 'block';
+  } else {
+    sec.style.display = 'none';
+  }
+}
+
+function buildReview() {
+  const cleanOpt = t => t.replace(/^[A-Da-d][).]\s*/,'').trim();
+  const list = document.getElementById('review-list');
+  list.innerHTML = '';
+  results.forEach((r, i) => {
+    const div = document.createElement('div');
+    div.className = 'review-item ' + (r.status === 'wrong' ? 'wrong-review' : r.status === 'skipped' ? 'skipped-review' : '');
+    const correctText = cleanOpt(r.opts[r.correct.toLowerCase()]);
+    let body = `<div class="ri-q">Q${i+1}. ${r.q}</div>`;
+    if (r.status === 'correct') {
+      body += `<div class="ri-ans">✅ Your answer: ${r.correct}) ${correctText}</div>`;
+    } else if (r.status === 'wrong') {
+      body += `<div class="ri-your">❌ Your answer: ${r.your}) ${cleanOpt(r.opts[r.your.toLowerCase()])}</div>`;
+      body += `<div class="ri-ans">✅ Correct: ${r.correct}) ${correctText}</div>`;
+    } else {
+      body += `<div class="ri-skip">⏩ Skipped — Correct: ${r.correct}) ${correctText}</div>`;
+    }
+    div.innerHTML = body;
+    list.appendChild(div);
+  });
+}
+
+function restartQuiz() {
+  document.getElementById('score-screen').style.display = 'none';
+  document.getElementById('start-screen').style.display = 'block';
+}
+</script>
+</body>
+</html>
